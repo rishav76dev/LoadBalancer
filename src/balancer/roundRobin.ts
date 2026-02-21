@@ -1,4 +1,4 @@
-import { type Backend } from "../types/types.js"
+import { type Backend } from "../types/types.ts"
 
 
 export class RoundRobin {

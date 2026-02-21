@@ -1,6 +1,6 @@
 import proxy from "express-http-proxy";
 import type { Request, Response, NextFunction } from "express";
-import { LoadBalancer } from "../balancer/loadBalancer.js";
+import { LoadBalancer } from "../balancer/loadBalancer.ts";
 import { BackendPool } from "../balancer/pool.ts";
 
 export function ProxyHandler(
