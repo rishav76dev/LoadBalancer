@@ -1,4 +1,5 @@
 import { BackendPool } from "../balancer/pool.ts";
+import { Logger } from "../utils/logger.ts";
 
 
 export class HealthChecker {
@@ -14,23 +15,32 @@ export class HealthChecker {
   async checkAll() {
     const backends = this.backendPool.getAllBackends();
 
-    for (const backend of backends) {
+    // Check all backends in parallel for faster health checks
+    const checks = backends.map(async (backend) => {
       try {
-        const res = await fetch(backend.url);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3000); 
+
+        const res = await fetch(backend.url, { signal: controller.signal });
+        clearTimeout(timeoutId);
 
         if (res.ok) {
           this.backendPool.markHealthy(backend.url);
-          console.log(`Healthy: ${backend.url}`);
+          Logger.health(backend.url, true, `status: ${res.status}`);
         } else {
           this.backendPool.markUnhealthy(backend.url);
-          console.log(`Unhealthy: ${backend.url}`);
+          Logger.health(backend.url, false, `status: ${res.status}`);
         }
 
       } catch (err) {
         this.backendPool.markUnhealthy(backend.url);
-        console.log(`Failed: ${backend.url}`);
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+        Logger.health(backend.url, false, errorMsg);
       }
-    }
+    });
+
+    await Promise.all(checks);
   }
 
   private async runLoop() {
@@ -47,7 +57,10 @@ export class HealthChecker {
     if (this.isRunning) return;
 
     this.isRunning = true;
-    this.runLoop();
+    
+    this.checkAll().then(() => {
+      this.runLoop();
+    });
   }
 
   stop() {
