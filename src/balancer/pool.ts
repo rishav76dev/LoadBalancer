@@ -10,6 +10,9 @@ export class BackendPool {
         ))
     }
 
+    getAllBackends(): Backend[] {
+        return this.backends;
+    }
     getHealthyBackends() : Backend[] {
         return this.backends.filter(backend => backend.health);
     }
