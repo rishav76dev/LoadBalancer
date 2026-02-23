@@ -15,7 +15,6 @@ export class HealthChecker {
   async checkAll() {
     const backends = this.backendPool.getAllBackends();
 
-    // Check all backends in parallel for faster health checks
     const checks = backends.map(async (backend) => {
       try {
         
